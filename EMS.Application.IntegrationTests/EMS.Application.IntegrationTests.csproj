@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EmpowerIdTask\Server\EMS.Server.csproj" />
+    <ProjectReference Include="..\EMS\Server\EMS.Server.csproj" />
   </ItemGroup>
 
 </Project>
