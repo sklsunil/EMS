@@ -1,0 +1,102 @@
+﻿@page "/"
+@using EMS.Application.Common.Models;
+@using EMS.Application.Features.Employee.DTOs;
+@using Newtonsoft;
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+
+<PageTitle>Index</PageTitle>
+
+@inject HttpClient Http
+
+<PageTitle>Employee</PageTitle>
+
+<h1>Employee</h1>
+
+
+@if (paginatedData == null || paginatedData.Items == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="col-md-12">
+        <div class="col-md-6"></div>
+        <div class="col-md-6"> <input placeholder="Search by email" @bind="Email" @bind:event="oninput" @onkeyup="SearchByEmail"></input></div>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>DOB</th>
+                <th>Department</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var employee in paginatedData.Items)
+            {
+                <tr>
+                    <td>@employee.Name</td>
+                    <td>@employee.Email</td>
+                    <td>@employee.DOB</td>
+                    <td>@employee.DepartmentName</td>
+                    <td>
+                        <ul class="list-inline m-0">
+                            <li class="list-inline-item">
+                                <a class="btn btn-success btn-sm rounded-0" type="button" title="Edit" @onclick="@(async _=> await Edit(employee.Id))">Edit</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a class="btn btn-danger btn-sm rounded-0" type="button" title="Delete" @onclick="@(async _=> await Delete(employee.Id))">Delete</a>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private PaginatedData<EmployeeDto> paginatedData;
+    private string Email { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+       await LoadEmployee();
+    }
+    private async Task LoadEmployee()
+    {
+        var data = await Http.GetStringAsync("Employee");
+        paginatedData = Newtonsoft.Json.JsonConvert.DeserializeObject<PaginatedData<EmployeeDto>>(data);
+    }
+    private async Task Edit(int empId)
+    {
+        Navigation.NavigateTo($"employee/{empId}");
+    }
+
+    private async Task Delete(int empId)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            await Http.DeleteAsync($"Employee/{empId}");
+            await LoadEmployee();
+        }
+    }
+    private async Task SearchByEmail(KeyboardEventArgs email)
+    {
+        if (string.IsNullOrWhiteSpace(Email))
+        {
+            await LoadEmployee();
+        }
+        else
+        {
+            var data = await Http.GetStringAsync($"employee?AdvancedSearch.Fields=Email&AdvancedSearch.Keyword={Email}&Keyword={Email}");
+            paginatedData = Newtonsoft.Json.JsonConvert.DeserializeObject<PaginatedData<EmployeeDto>>(data);
+        }
+
+    }
+}
